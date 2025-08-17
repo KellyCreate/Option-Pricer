@@ -11,23 +11,25 @@ def sidebar_model_parameter(spot_price, volatility):
     """
     Creates sidebar UI elements in Streamlit to input parameters for option pricing
     """
-    st.subheader("Specific Values for Point Calculation")
-    input_spot_price = float(st.text_input('Spot Price', spot_price))
-    input_strike_price = float(st.text_input('Strike Price', spot_price))
-    input_interest_rate = float(st.text_input('Risk-free rate', 0.02))
-    input_volatility = float(st.text_input('Volatility', volatility))
-    input_time_to_maturity =  float(st.text_input('Time to Maturity (Years)', 1))
+    st.subheader("📍 Specific Values for Point Calculation")
+    input_spot_price = st.number_input("Spot Price", value=spot_price, format="%.2f")
+    input_strike_price = st.number_input("Strike Price", value=spot_price, format="%.2f")
+    input_interest_rate = st.number_input("Risk-free rate", value=0.02, format="%.4f")
+    input_volatility = st.number_input("Volatility", value=volatility, format="%.4f")
+    input_time_to_maturity = st.number_input("Time to Maturity (Years)", value=1.0, format="%.2f")
 
     st.markdown("""
     *These values are used to calculate and display the price at a single point on the surface.*
     """)
 
-    st.subheader("Strike Values for PnL")
+    st.subheader("📈 Strike Values for PnL")
     recommended_long_call_strike, recommended_long_put_strike = pnl_chart.get_strike_prices_for_long_options(spot_price, margin=0.05)
-    long_call_strike_price = float(st.text_input("Long Call Strike Price:",recommended_long_call_strike))
-    long_put_strike_price = float(st.text_input("Long Put Strike Price:", recommended_long_put_strike))
 
-    st.subheader("Ranges for Plotting the 3D Surface")
+    long_call_strike_price = st.number_input("Long Call Strike Price", value=recommended_long_call_strike, format="%.2f")
+    long_put_strike_price = st.number_input("Long Put Strike Price", value=recommended_long_put_strike, format="%.2f")
+
+
+    st.subheader("🖼 Ranges for 3D Surface")
     volatility_range = st.slider("Volatility Range (for chart)",
                           min_value=0.01, max_value=1.0, value=(0.3,0.8), step=0.01)
     time_to_maturity_range = st.slider("Time Range (Years, for chart)",
@@ -113,25 +115,35 @@ st.set_page_config(page_title='Option Pricer',
 # -------------------------------------------------------------- Top of Sidebar --------------------------------------------------------------------
 
 with st.sidebar:
-    st.title('Control Center')
-    st.write('Connect with me ✌️:')
+    st.title('⚙️ Control Center')
+    st.write('#### Connect with me ✌️:')
     linkedin_url = 'https://ca.linkedin.com/in/kalagi-kelly’ande-palmy-710328287'
-    st.markdown(f'<a href="{linkedin_url}" target="_blank" style="text-decoration: none; color: inherit;"><img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="25" height="25" style="vertical-align: middle; margin-right: 10px;">`Kalagi Kelly Ande Palmy`</a>', unsafe_allow_html=True)
+    st.markdown(
+        f'<a href="{linkedin_url}" target="_blank">'
+        '<img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" width="20">'
+        " Kalagi Kelly Ande Palmy</a>",
+        unsafe_allow_html=True
+    )
+    st.markdown("---")
 
-    # --- Initialization ---
-    ticker =  st.text_input("Ticker Symbol", "AAPL")
+    # --- Ticker input ---
+    ticker =  st.text_input("**Ticker Symbol**", "NVDA")
     stock = yfinance_data.stockData(ticker)
     display_name = stock.get_display_name()
     spot_price = round(stock.get_spot_price(),2)
     volatility = round(stock.get_annual_volatility(),5)
     historical_data = stock.get_historical_data(period="1y")
-    st.text('Stock Name:')
-    st.text(display_name)
+    st.info(f"**Stock Name:** {display_name}")
     st.markdown("---")
 
-st.title('Option Pricer')
-historical_plot = historical_chart.plot_historical_price(historical_data, display_name)
-st.pyplot(historical_plot)
+# ---------------- MAIN HEADER ----------------
+st.title("💹 Interactive Option Pricer")
+st.caption("Explore Black-Scholes, Binomial, and Monte Carlo pricing models with dynamic visualizations.")
+
+# Historical chart
+with st.expander("📜 View Historical Price Data"):
+    historical_plot = historical_chart.plot_historical_price(historical_data, display_name)
+    st.pyplot(historical_plot)
 
 # --- How to use this app ---
 with st.sidebar:
@@ -141,86 +153,93 @@ with st.sidebar:
     - Adjust the ranges to plot the 3D surface over different volatilities and times to expiry.
     """)
 
+# -------------------------------------------------------------- Tabs For Models --------------------------------------------------------------------
+tab_black_scholes, tab_binomial, tab_monte_carlo = st.tabs(["Black-Scholes", "Binomial",  "Monte Carlo"])
+
+
 # -------------------------------------------------------------- Black-Scholes Model --------------------------------------------------------------------
+with tab_black_scholes:
 
-with st.sidebar.form('form1'):
-    st.header("Black-Scholes Parameters")
+    with st.sidebar.form('form1'):
+        st.header("Black-Scholes Parameters")
 
-    input_spot_price, input_strike_price, input_interest_rate, input_volatility, input_time_to_maturity, volatility_range, time_to_maturity_range, long_call_strike_price, long_put_strike_price = sidebar_model_parameter(spot_price, volatility)
+        input_spot_price, input_strike_price, input_interest_rate, input_volatility, input_time_to_maturity, volatility_range, time_to_maturity_range, long_call_strike_price, long_put_strike_price = sidebar_model_parameter(spot_price, volatility)
 
-    submit = st.form_submit_button("Update Chart")
+        submit = st.form_submit_button("Update Chart")
 
-st.header("Black-Scholes Model", divider="grey", width="content")
+    st.header("Black-Scholes Model", divider="grey", width="content")
 
-model_pricing_call_option = lambda volatility, time_to_maturity: black_scholes.black_scholes_pricing_call(spot_price=input_spot_price, 
-                                                                                                     strike_price=input_strike_price, 
-                                                                                                     risk_free_rate=input_interest_rate, 
-                                                                                                     time_to_maturity=time_to_maturity, 
-                                                                                                     volatility=volatility)
-model_pricing_put_option = lambda volatility, time_to_maturity: black_scholes.black_scholes_pricing_put(spot_price=input_spot_price, 
-                                                                                                    strike_price=input_strike_price, 
-                                                                                                    risk_free_rate=input_interest_rate, 
-                                                                                                    time_to_maturity=time_to_maturity, 
-                                                                                                    volatility=volatility)
-model_visualization_streamlit_integration(model_pricing_call_option, model_pricing_put_option, spot_price, volatility_range, time_to_maturity_range,
-                                          input_volatility, input_time_to_maturity,  input_strike_price, "Black-Scholes",  long_call_strike_price, long_put_strike_price)
+    model_pricing_call_option = lambda volatility, time_to_maturity: black_scholes.black_scholes_pricing_call(spot_price=input_spot_price, 
+                                                                                                        strike_price=input_strike_price, 
+                                                                                                        risk_free_rate=input_interest_rate, 
+                                                                                                        time_to_maturity=time_to_maturity, 
+                                                                                                        volatility=volatility)
+    model_pricing_put_option = lambda volatility, time_to_maturity: black_scholes.black_scholes_pricing_put(spot_price=input_spot_price, 
+                                                                                                        strike_price=input_strike_price, 
+                                                                                                        risk_free_rate=input_interest_rate, 
+                                                                                                        time_to_maturity=time_to_maturity, 
+                                                                                                        volatility=volatility)
+    model_visualization_streamlit_integration(model_pricing_call_option, model_pricing_put_option, spot_price, volatility_range, time_to_maturity_range,
+                                            input_volatility, input_time_to_maturity,  input_strike_price, "Black-Scholes",  long_call_strike_price, long_put_strike_price)
 
 # -------------------------------------------------------------- Binomial Model --------------------------------------------------------------------
+with tab_binomial:
+        
+    with st.sidebar.form('form2'):
+        st.header('Binomial Parameters')
 
-with st.sidebar.form('form2'):
-    st.header('Binomial Parameters')
+        input_spot_price, input_strike_price, input_interest_rate, input_volatility, input_time_to_maturity, volatility_range, time_to_maturity_range, long_call_strike_price, long_put_strike_price = sidebar_model_parameter(spot_price, volatility)
+        input_step = int(st.text_input("Number of time steps",100))
 
-    input_spot_price, input_strike_price, input_interest_rate, input_volatility, input_time_to_maturity, volatility_range, time_to_maturity_range, long_call_strike_price, long_put_strike_price = sidebar_model_parameter(spot_price, volatility)
-    input_step = int(st.text_input("Number of time steps",100))
+        submit = st.form_submit_button("Update Chart")
 
-    submit = st.form_submit_button("Update Chart")
+    st.header("Binomial Model", divider="grey",  width="content")
 
-st.header("Binomial Model", divider="grey",  width="content")
-
-model_pricing_call_option = lambda volatility, time_to_maturity: binomial.binomial_pricing(spot_price=input_spot_price, 
-                                                                                                     strike_price=input_strike_price, 
-                                                                                                     risk_free_rate=input_interest_rate, 
-                                                                                                     time_to_maturity=time_to_maturity, 
-                                                                                                     volatility=volatility,
-                                                                                                     steps = input_step,
-                                                                                                     option_type = "Call")
-model_pricing_put_option = lambda volatility, time_to_maturity: binomial.binomial_pricing(spot_price=input_spot_price, 
-                                                                                                    strike_price=input_strike_price, 
-                                                                                                    risk_free_rate=input_interest_rate, 
-                                                                                                    time_to_maturity=time_to_maturity, 
-                                                                                                    volatility=volatility,
-                                                                                                    steps = input_step,
-                                                                                                    option_type = "Put")
-model_visualization_streamlit_integration(model_pricing_call_option, model_pricing_put_option, spot_price, volatility_range, time_to_maturity_range,
-                                          input_volatility, input_time_to_maturity,  input_strike_price, "Binomial",  long_call_strike_price, long_put_strike_price)
+    model_pricing_call_option = lambda volatility, time_to_maturity: binomial.binomial_pricing(spot_price=input_spot_price, 
+                                                                                                        strike_price=input_strike_price, 
+                                                                                                        risk_free_rate=input_interest_rate, 
+                                                                                                        time_to_maturity=time_to_maturity, 
+                                                                                                        volatility=volatility,
+                                                                                                        steps = input_step,
+                                                                                                        option_type = "Call")
+    model_pricing_put_option = lambda volatility, time_to_maturity: binomial.binomial_pricing(spot_price=input_spot_price, 
+                                                                                                        strike_price=input_strike_price, 
+                                                                                                        risk_free_rate=input_interest_rate, 
+                                                                                                        time_to_maturity=time_to_maturity, 
+                                                                                                        volatility=volatility,
+                                                                                                        steps = input_step,
+                                                                                                        option_type = "Put")
+    model_visualization_streamlit_integration(model_pricing_call_option, model_pricing_put_option, spot_price, volatility_range, time_to_maturity_range,
+                                            input_volatility, input_time_to_maturity,  input_strike_price, "Binomial",  long_call_strike_price, long_put_strike_price)
 
 
 # -------------------------------------------------------------- Monte Carlo Model --------------------------------------------------------------------
-with st.sidebar.form('form3'):
-    st.header('Monte Carlo Parameters')
+with tab_monte_carlo:
+    with st.sidebar.form('form3'):
+        st.header('Monte Carlo Parameters')
 
-    input_spot_price, input_strike_price, input_interest_rate, input_volatility, input_time_to_maturity, volatility_range, time_to_maturity_range, long_call_strike_price, long_put_strike_price = sidebar_model_parameter(spot_price, volatility)
+        input_spot_price, input_strike_price, input_interest_rate, input_volatility, input_time_to_maturity, volatility_range, time_to_maturity_range, long_call_strike_price, long_put_strike_price = sidebar_model_parameter(spot_price, volatility)
 
-    submit = st.form_submit_button("Update Chart")
+        submit = st.form_submit_button("Update Chart")
 
-st.header("Monte Carlo Model", divider="grey",  width="content")
+    st.header("Monte Carlo Model", divider="grey",  width="content")
 
-model_pricing_call_option = lambda volatility, time_to_maturity: monte_carlo.monte_carlo_pricing(spot_price=input_spot_price, 
-                                                                                                     strike_price=input_strike_price, 
-                                                                                                     risk_free_rate=input_interest_rate, 
-                                                                                                     time_to_maturity=time_to_maturity, 
-                                                                                                     volatility=volatility,
-                                                                                                     option_type = "Call")
+    model_pricing_call_option = lambda volatility, time_to_maturity: monte_carlo.monte_carlo_pricing(spot_price=input_spot_price, 
+                                                                                                        strike_price=input_strike_price, 
+                                                                                                        risk_free_rate=input_interest_rate, 
+                                                                                                        time_to_maturity=time_to_maturity, 
+                                                                                                        volatility=volatility,
+                                                                                                        option_type = "Call")
 
-model_pricing_put_option = lambda volatility, time_to_maturity: monte_carlo.monte_carlo_pricing(spot_price=input_spot_price, 
-                                                                                                     strike_price=input_strike_price, 
-                                                                                                     risk_free_rate=input_interest_rate, 
-                                                                                                     time_to_maturity=time_to_maturity, 
-                                                                                                     volatility=volatility,
-                                                                                                     option_type = "Put")
+    model_pricing_put_option = lambda volatility, time_to_maturity: monte_carlo.monte_carlo_pricing(spot_price=input_spot_price, 
+                                                                                                        strike_price=input_strike_price, 
+                                                                                                        risk_free_rate=input_interest_rate, 
+                                                                                                        time_to_maturity=time_to_maturity, 
+                                                                                                        volatility=volatility,
+                                                                                                        option_type = "Put")
 
-model_visualization_streamlit_integration(model_pricing_call_option, model_pricing_put_option, spot_price, volatility_range, time_to_maturity_range,
-                                          input_volatility, input_time_to_maturity,  input_strike_price, "Monte Carlo",  long_call_strike_price, long_put_strike_price)
+    model_visualization_streamlit_integration(model_pricing_call_option, model_pricing_put_option, spot_price, volatility_range, time_to_maturity_range,
+                                            input_volatility, input_time_to_maturity,  input_strike_price, "Monte Carlo",  long_call_strike_price, long_put_strike_price)
 
 
 
