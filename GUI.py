@@ -112,6 +112,7 @@ st.set_page_config(page_title='Option Pricer',
                    initial_sidebar_state='expanded')
 
 
+
 # -------------------------------------------------------------- Top of Sidebar --------------------------------------------------------------------
 
 with st.sidebar:
@@ -132,8 +133,15 @@ with st.sidebar:
     display_name = stock.get_display_name()
     spot_price = round(stock.get_spot_price(),2)
     volatility = round(stock.get_annual_volatility(),5)
-    historical_data = stock.get_historical_data(period="1y")
     st.info(f"**Stock Name:** {display_name}")
+    # Sidebar slider to select period
+    historical_data_period = st.select_slider(
+        "Select the maximum period for historical data",
+        options=["1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"],
+        value="1y"  # default
+    )
+    historical_data = stock.get_historical_data(period=historical_data_period)
+    
     st.markdown("---")
 
 # ---------------- MAIN HEADER ----------------
@@ -143,7 +151,7 @@ st.caption("Explore Black-Scholes, Binomial, and Monte Carlo pricing models with
 # Historical chart
 with st.expander("📜 View Historical Price Data"):
     historical_plot = historical_chart.plot_historical_price(historical_data, display_name)
-    st.pyplot(historical_plot)
+    st.plotly_chart(historical_plot)
 
 # --- How to use this app ---
 with st.sidebar:
@@ -161,9 +169,12 @@ tab_black_scholes, tab_binomial, tab_monte_carlo = st.tabs(["Black-Scholes", "Bi
 with tab_black_scholes:
 
     with st.sidebar.form('form1'):
-        st.header("Black-Scholes Parameters")
 
-        input_spot_price, input_strike_price, input_interest_rate, input_volatility, input_time_to_maturity, volatility_range, time_to_maturity_range, long_call_strike_price, long_put_strike_price = sidebar_model_parameter(spot_price, volatility)
+        st.header("Black-Scholes")
+        
+        with st.expander("Parameters"):
+
+            input_spot_price, input_strike_price, input_interest_rate, input_volatility, input_time_to_maturity, volatility_range, time_to_maturity_range, long_call_strike_price, long_put_strike_price = sidebar_model_parameter(spot_price, volatility)
 
         submit = st.form_submit_button("Update Chart")
 
@@ -186,10 +197,13 @@ with tab_black_scholes:
 with tab_binomial:
         
     with st.sidebar.form('form2'):
-        st.header('Binomial Parameters')
 
-        input_spot_price, input_strike_price, input_interest_rate, input_volatility, input_time_to_maturity, volatility_range, time_to_maturity_range, long_call_strike_price, long_put_strike_price = sidebar_model_parameter(spot_price, volatility)
-        input_step = int(st.text_input("Number of time steps",100))
+        st.header('Binomial')
+
+        with st.expander("Parameters"):
+
+            input_spot_price, input_strike_price, input_interest_rate, input_volatility, input_time_to_maturity, volatility_range, time_to_maturity_range, long_call_strike_price, long_put_strike_price = sidebar_model_parameter(spot_price, volatility)
+            input_step = int(st.text_input("Number of time steps",100))
 
         submit = st.form_submit_button("Update Chart")
 
@@ -216,9 +230,12 @@ with tab_binomial:
 # -------------------------------------------------------------- Monte Carlo Model --------------------------------------------------------------------
 with tab_monte_carlo:
     with st.sidebar.form('form3'):
-        st.header('Monte Carlo Parameters')
 
-        input_spot_price, input_strike_price, input_interest_rate, input_volatility, input_time_to_maturity, volatility_range, time_to_maturity_range, long_call_strike_price, long_put_strike_price = sidebar_model_parameter(spot_price, volatility)
+        st.header('Monte Carlo')
+
+        with st.expander("Parameters"):
+
+            input_spot_price, input_strike_price, input_interest_rate, input_volatility, input_time_to_maturity, volatility_range, time_to_maturity_range, long_call_strike_price, long_put_strike_price = sidebar_model_parameter(spot_price, volatility)
 
         submit = st.form_submit_button("Update Chart")
 
@@ -240,15 +257,3 @@ with tab_monte_carlo:
 
     model_visualization_streamlit_integration(model_pricing_call_option, model_pricing_put_option, spot_price, volatility_range, time_to_maturity_range,
                                             input_volatility, input_time_to_maturity,  input_strike_price, "Monte Carlo",  long_call_strike_price, long_put_strike_price)
-
-
-
-
-
-
-
-
-
-
-
-

@@ -24,22 +24,30 @@ def plot_3d_surface_and_heatmap(min_volatility, max_volatility, min_time,  max_t
             prices[i,j] = pricing_function(V[i,j],T[i,j])
 
     # --- Plot 3D surface ---
-    fig1 = go.Figure(data=[go.Surface(x=V, y=T, z=prices, colorscale='viridis', colorbar_title='Option Price')])
+    fig1 = go.Figure(data=[go.Surface(x=V, y=T, z=prices, colorscale=[[0, "#081B41"], [0.5, "#1E3A8A"], [1, "#3B82F6"]],
+                                    colorbar=dict(title="Option Price", thickness=15, tickcolor="black"))])
     fig1.update_layout(
-        title=f"{title} Option Price Surface",
+        title=dict(text=f"{title} Option Price Surface", font=dict(size=18, color="#111827")),
         scene=dict(
-            xaxis_title= 'Volatility',
-            yaxis_title= 'Time to maturity',
-            zaxis_title= 'Option Price'
-    )
+            xaxis=dict(title="Volatility", tickfont=dict(size=14, color="#111827"), backgroundcolor="#F9FAFB"),
+            yaxis=dict(title="Time to Maturity", tickfont=dict(size=14, color="#111827"), backgroundcolor="#F9FAFB"),
+            zaxis=dict(title="Option Price", tickfont=dict(size=14, color="#111827"), backgroundcolor="#F9FAFB"),
+        ),
+        margin=dict(l=20, r=20, t=50, b=20),
+        template="plotly_white"
     )
 
     # --- Plot heatmap ---
+
+    # Custom modern grey-blue colormap
+    cmap = sns.color_palette("blend:#1E3A8A,#3B82F6,#E5E7EB", as_cmap=True)
     fig2, ax2 = plt.subplots(figsize=(10,5))
-    sns.heatmap(prices, xticklabels=np.round(volatility_range,2), yticklabels=np.round(time_range,2), annot=True, fmt=".2f", cmap='viridis', ax=ax2)
-    ax2.set_xlabel('Volatility')
-    ax2.set_ylabel('Time to expiry')
-    ax2.set_title(f'{title} Option Price Heatmap')
+
+    sns.heatmap(prices, xticklabels=np.round(volatility_range,2), yticklabels=np.round(time_range,2), annot=True, fmt=".2f", cmap=cmap, ax=ax2, 
+                linecolor="white", linewidths=0.5, cbar_kws={"label": "Option Price"})
+    ax2.set_xlabel("Volatility", fontsize=12, weight="bold")
+    ax2.set_ylabel("Time to Expiry", fontsize=12, weight="bold")
+    ax2.set_title(f"{title} Option Price Heatmap", fontsize=14, weight="bold", pad=15)
 
 
     return fig1, fig2

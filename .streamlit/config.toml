@@ -1,0 +1,13 @@
+[theme]
+base="light"
+
+# Accent / interactive
+primaryColor="#2563EB"             # Bright modern blue
+secondaryBackgroundColor="#F3F4F6" # Very light cool grey for cards
+
+# Background & text
+backgroundColor="#E5E7EB"          # Soft medium grey background
+textColor="#1F2937"                # Dark slate grey for text
+
+# Typography
+font="sans serif"

@@ -37,30 +37,58 @@ def get_strike_prices_for_long_options(spot_price, margin=0.05):
     return call_strike, put_strike
 
 
+import numpy as np
+import matplotlib.pyplot as plt
 
 def plot_payoff_diagram(K, price_lower_bound, price_upper_bound, premium=5, option_type='Long Put'):
     """
-    Plot profit and loss diagram for a given strike price and a given range for the possible stock price
+    Plot profit and loss diagram for a given strike price and a given range for the possible stock price.
+    Includes clear placement of the breakeven point.
     """
-    S_range = np.linspace(price_lower_bound, price_upper_bound, 200) # Possible stock prices at expiry
-
-    # Payoff and PnL
-    payoff = np.maximum(S_range-K,0) if option_type == 'Long Call' else np.maximum(K-S_range,0)
-    pnl = payoff  - premium
+    S_range = np.linspace(price_lower_bound, price_upper_bound, 300)  
     
-    # Create a Figure and Axes explicitly
-    fig, ax = plt.subplots(figsize=(10,5))
+    # Payoff and PnL
+    if option_type == 'Long Call':
+        payoff = np.maximum(S_range - K, 0)
+        breakeven = K + premium
+    else:  # Long Put
+        payoff = np.maximum(K - S_range, 0)
+        breakeven = K - premium
+    
+    pnl = payoff - premium
 
-    ax.plot(S_range,  payoff, label="Payoff  (no cost)", linestyle='--')
-    ax.plot(S_range, pnl, label='PnL (includes premium)', color='green')
-    ax.axhline(0, color='black', linewidth=0.5)
-    ax.axvline(K, color='grey', linestyle=':',  label='Stike Price')
-    ax.axvline(K+premium, color='red', linestyle=':', label='Breakeven point')
-    ax.set_title(f"PnL and Payoff Diagram for {option_type} Option Strategy")
-    ax.set_xlabel('Stock price at expiration')
-    ax.set_ylabel('Profit/Loss')
-    ax.legend()
-    ax.grid(True)
+    # Create Figure
+    fig, ax = plt.subplots(figsize=(10,6), facecolor="white")
+    ax.set_facecolor("white")
+
+    # Plot PnL
+    ax.plot(S_range, pnl, color='#2ecc71', linewidth=2.2, label='PnL (includes premium)')
+    ax.fill_between(S_range, pnl, 0, where=(pnl >= 0), color='#2ecc71', alpha=0.25)
+    ax.fill_between(S_range, pnl, 0, where=(pnl < 0), color='#e74c3c', alpha=0.25)
+
+    # Payoff
+    ax.plot(S_range, payoff, linestyle='--', color='#2980b9', linewidth=2, label="Payoff (no cost)")
+
+    # Reference lines
+    ax.axhline(0, color='black', linewidth=1, linestyle='-')
+    ax.axvline(K, color='#7f8c8d', linestyle=':', linewidth=1.3, label=f'Strike Price ({K})')
+
+    # Add breakeven only if it lies inside plotted range
+    if price_lower_bound <= breakeven <= price_upper_bound:
+        ax.axvline(breakeven, 
+                   color='#e67e22', linestyle='--', linewidth=1.5, 
+                   label=f'Breakeven ({breakeven:.2f})')
+
+    # Titles & labels
+    ax.set_title(f"{option_type} Option: Payoff & PnL", fontsize=16, fontweight='bold', color='#1F2937')
+    ax.set_xlabel("Stock Price at Expiration", fontsize=12, color='#1F2937')
+    ax.set_ylabel("Profit / Loss", fontsize=12, color='#1F2937')
+
+    # Legend
+    ax.legend(frameon=False, fontsize=10)
+    ax.grid(True, linestyle='--', alpha=0.4, color="#bdc3c7")
+
     fig.tight_layout()
-
     return fig
+
+

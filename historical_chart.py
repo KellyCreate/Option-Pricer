@@ -1,20 +1,30 @@
-import matplotlib.pyplot as plt
+import plotly.express as px
 import yfinance_data
 
 def plot_historical_price(price, display_name):
     """
-    Create and return a matplotlib figure of historical stock price
+    Create and return an interactive Plotly figure of historical stock price
     """
-    # Create a Figure and Axes explicitly
-    fig, ax = plt.subplots(figsize=(10,5))
-    # Use artist layer: call methods on `ax`
-    ax.plot(price.index, price, label='Close Price', color='blue')
-    ax.set_title(f"{display_name} Historical Close Price (1Y)")
-    ax.set_xlabel('Date')
-    ax.set_ylabel('Price (USD)')
-    ax.grid(True, linestyle='--', alpha=0.5)
-    ax.legend()
-    fig.tight_layout()
+    fig = px.line(
+        price,
+        x=price.index,
+        y=price.values,
+        title=f"{display_name} - Historical Close Price",
+        labels={"x": "Date", "y": "Price (USD)"},
+        template="plotly_white"
+    )
+
+    # Improve design
+    fig.update_traces(
+        line=dict(color="#1f77b4", width=2),
+        hovertemplate="Date: %{x}<br>Price: %{y:.2f} USD"
+    )
+    
+    fig.update_layout(
+        title=dict(font=dict(size=20, family="Arial", color="black"), x=0.4),
+        xaxis=dict(showgrid=True, gridcolor="lightgray"),
+        yaxis=dict(showgrid=True, gridcolor="lightgray"),
+        hovermode="x unified"  # single hover label across the vertical line
+    )
 
     return fig
-
